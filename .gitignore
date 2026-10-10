@@ -1,0 +1,7 @@
+node_modules
+dist
+fly_pilot/data
+fly_pilot/assets
+fly_pilot/*.log
+__pycache__
+.DS_Store

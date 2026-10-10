@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Valley Intercept</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+</head>
+<body>
+<div id="game">
+  <canvas id="gl"></canvas>
+  <div id="lbTop" class="lb"></div><div id="lbBot" class="lb"></div>
+  <canvas id="hud"></canvas>
+  <div id="vig"></div>
+
+  <div id="ui">
+    <div id="topbar">
+      <div id="waveStats" class="stats">
+        <div><span class="label">Sortie</span><span class="v num" id="uSortie">1</span></div>
+        <div><span class="label">Wave</span><span class="v num" id="uWave">1</span></div>
+        <div><span class="label">Score</span><span class="v num" id="uScore">0</span></div>
+        <div><span class="label">Kills</span><span class="v num" id="uKills">0</span></div>
+        <div><span class="label">Bandits</span><span class="v num" id="uFoes">0</span></div>
+      </div>
+      <div id="duelScore" class="stats" hidden>
+        <div><span class="label">You</span><span class="v num" id="dYou">0</span></div>
+        <div><span class="label">Fruit fly</span><span class="v num fly" id="dFly">0</span></div>
+      </div>
+    </div>
+    <div id="feed"></div>
+    <div id="warn"></div>
+    <div id="banner"><h2 id="bTitle"></h2><p id="bSub"></p></div>
+    <div id="shot"></div>
+
+    <div id="strip">
+      <div class="cell"><span class="label">IAS</span><span class="val num" id="uSpd">0</span><span class="unit">km/h</span></div>
+      <div class="cell"><span class="label">ALT</span><span class="val num" id="uAlt">0</span><span class="unit">m</span></div>
+      <div class="cell"><span class="label">Load</span><span class="val num" id="uG">1.0</span><span class="unit">G</span></div>
+      <div class="cell"><span class="label">THR</span><span class="val num" id="uThr">0</span></div>
+      <div class="cell"><span class="pill" id="uBrake">Airbrake</span></div>
+      <div class="cell decision"><span class="mode" id="uMode">Patrol</span><span class="skill" id="uSkill"></span></div>
+    </div>
+
+    <div class="panel" id="arms">
+      <span class="label">Cannon</span><span><span class="val num" id="uAmmo">0</span><span class="unit">rds</span></span>
+      <span class="label">IR msl</span><span class="pips" id="uMsl"></span>
+      <span class="label">Flares</span><span><span class="val num" id="uFlr">0</span></span>
+      <span class="label">Airframe</span><span><span class="val num" id="uHp">100</span><span class="unit">%</span></span>
+      <div class="bar" id="hpBar"><span id="hpFill" style="width:100%"></span></div>
+    </div>
+    <canvas id="radar"></canvas>
+  </div>
+
+  <button id="sound" type="button">Sound off · click for sound</button>
+
+  <button id="paused" type="button" hidden>Paused · press P or click to resume</button>
+  <div id="shutter"></div>
+  <button id="paneTab" type="button" aria-expanded="false" aria-controls="pane">Controls</button>
+  <aside id="pane" hidden aria-label="Controls and settings">
+    <header><span>Controls</span><button id="paneClose" type="button">Close</button></header>
+    <section>
+      <h3>Game</h3>
+      <div class="grid3">
+        <button type="button" data-act="pause">Pause</button><button type="button" data-act="next">Next wave</button><button type="button" data-act="restart">New sortie</button>
+        <button type="button" data-act="hud">Hide HUD</button><button type="button" data-act="shot">Screenshot</button><button type="button" data-act="full">Fullscreen</button>
+      </div>
+      <div class="seg" data-group="speed"><button type="button" data-v="0.5">½× speed</button><button type="button" data-v="1">1×</button><button type="button" data-v="2">2×</button></div>
+    </section>
+    <section>
+      <h3>Who flies</h3>
+      <div class="seg" data-group="pilot">
+        <button type="button" data-v="fly">Fruit fly</button><button type="button" data-v="player">You fly</button><button type="button" data-v="duel">1v1 vs fly</button>
+      </div>
+      <p class="hint" id="pilotHint"></p>
+    </section>
+    <section>
+      <h3>Camera</h3>
+      <div class="seg wrap" data-group="cam">
+        <button type="button" data-v="cinematic">Cinematic</button><button type="button" data-v="flycam">Fly cam</button><button type="button" data-v="cockpit">Pilot</button>
+        <button type="button" data-v="chase">Chase</button><button type="button" data-v="orbit">Free orbit</button><button type="button" data-v="player">Aim cam</button>
+      </div>
+      <p class="hint">Free orbit: drag to look around, scroll to zoom.</p>
+    </section>
+    <section id="keysSec" hidden>
+      <h3>Your controls</h3>
+      <dl class="keys">
+        <dt>Mouse</dt><dd>Aim; the jet follows</dd>
+        <dt>LMB · Space</dt><dd>Cannon</dd>
+        <dt>RMB · F</dt><dd>Missile (locks within ~30° of the nose)</dd>
+        <dt>X</dt><dd>Flares</dd>
+        <dt>W · S</dt><dd>Throttle; above 100% is afterburner</dd>
+        <dt>Shift</dt><dd>Airbrake</dd>
+        <dt>A · D · Q · E</dt><dd>Roll and rudder</dd>
+        <dt>C (hold)</dt><dd>Free look</dd>
+        <dt>V</dt><dd>Aim cam / fly cam</dd>
+      </dl>
+    </section>
+    <section>
+      <h3>The fly's record</h3>
+      <div id="flyRec"></div>
+    </section>
+    <section>
+      <h3>What the fly has learned</h3>
+      <p class="hint" id="learnEvent"></p>
+      <h4>Situations it now avoids</h4>
+      <div id="learnBars"></div>
+      <h4>Tactics it is trying</h4>
+      <div id="learnTactics"></div>
+      <h4>Score per wave</h4>
+      <canvas id="learnChart"></canvas>
+      <div class="row">
+        <label class="tog"><input type="checkbox" id="setLearn" checked> Keep learning</label>
+        <button type="button" id="learnReset" class="ghost">Forget everything</button>
+      </div>
+    </section>
+    <section>
+      <h3>Display</h3>
+      <label class="tog"><input type="checkbox" id="setBrain" checked> Brain panel</label>
+      <label class="tog"><input type="checkbox" id="setMarks" checked> Target markers</label>
+      <label class="tog"><input type="checkbox" id="setSlow" checked> Slow-motion kills</label>
+    </section>
+    <section>
+      <h3>Graphics</h3>
+      <div class="seg" data-group="quality"><button type="button" data-v="high">High</button><button type="button" data-v="medium">Medium</button><button type="button" data-v="low">Low</button></div>
+    </section>
+    <section>
+      <h3>Shortcuts</h3>
+      <dl class="keys">
+        <dt>P</dt><dd>Pause / resume (Space too, while watching)</dd>
+        <dt>1 · 2 · 3</dt><dd>Game speed ½× · 1× · 2×</dd>
+        <dt>C</dt><dd>Next camera (while watching)</dd>
+        <dt>B</dt><dd>Brain panel on / off (while watching)</dd>
+        <dt>N</dt><dd>Skip to the next wave (while watching)</dd>
+        <dt>H</dt><dd>Hide the HUD for clean shots</dd>
+        <dt>K</dt><dd>Save a screenshot</dd>
+        <dt>Esc</dt><dd>Close this pane</dd>
+      </dl>
+    </section>
+    <section>
+      <h3>Sound</h3>
+      <div class="row"><label class="tog"><input type="checkbox" id="setSound"> Sound</label><input type="range" id="setVol" min="0" max="1" step="0.05" value="0.6" aria-label="Volume"></div>
+    </section>
+  </aside>
+  <p id="fatal" hidden>WebGL is not available in this browser, so the game cannot start.</p>
+</div>
+<script type="module" src="/src/main.js"></script>
+</body>
+</html>
